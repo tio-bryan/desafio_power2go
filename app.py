@@ -7,7 +7,6 @@ from database import db_session
 from schema import schema
 
 
-
 app = Flask(__name__)
 app.debug = True
 

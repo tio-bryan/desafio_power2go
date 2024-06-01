@@ -1,11 +1,13 @@
 [MAIN]
 
 disable=
-    E0015, # unrecognized-option
-    C0114, # missing-module-docstring
-    C0115, # missing-class-docstring
-    C0116, # missing-function-docstring
-    R0903, # too-few-public-methods
+    unrecognized-option,
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    invalid-name, # To bypass resolve functions on schema.py. As in the statement there are queries with camel case, I removed the mandatory snake case.
+    redefined-builtin # To bypass "id" parameters on schema.py. As in the statement there are queries with the "id" parameter, I removed this error of reserved variables names.
 
 # Analyse import fallback blocks. This can be used to support both Python 2 and
 # 3 compatible code, which means that the block might have code that exists

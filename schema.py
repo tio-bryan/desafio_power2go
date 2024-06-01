@@ -1,41 +1,45 @@
 import graphene
 from graphene import relay
-from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
+from graphene_sqlalchemy import SQLAlchemyObjectType
 
-from models import Department as DepartmentModel
-from models import Employee as EmployeeModel
-from models import Role as RoleModel
-
+from models import User as UserModel
+from models import Contract as ContractModel
 
 
-class Department(SQLAlchemyObjectType):
+class User(SQLAlchemyObjectType):
     class Meta:
-        model = DepartmentModel
+        model = UserModel
         interfaces = (relay.Node,)
 
 
-class Employee(SQLAlchemyObjectType):
+class Contract(SQLAlchemyObjectType):
     class Meta:
-        model = EmployeeModel
-        interfaces = (relay.Node,)
-
-
-class Role(SQLAlchemyObjectType):
-    class Meta:
-        model = RoleModel
+        model = ContractModel
         interfaces = (relay.Node,)
 
 
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
-    # Allow only single column sorting
-    all_employees = SQLAlchemyConnectionField(
-        Employee.connection, sort=Employee.sort_argument()
-    )
-    # Allows sorting over multiple columns, by default over the primary key
-    all_roles = SQLAlchemyConnectionField(Role.connection)
-    # Disable sorting over this field
-    all_departments = SQLAlchemyConnectionField(Department.connection, sort=None)
+
+    # Get user
+    getUser = graphene.List(lambda: User, id=graphene.ID(required=True))
+
+    def resolve_getUser(self, info, id=None):
+        query = User.get_query(info)
+        if id:
+            query = query.filter(UserModel.id == id)
+        return query.all()
+
+
+    # Get contract
+    getContract = graphene.List(lambda: Contract, id=graphene.ID(required=True))
+
+    def resolve_getContract(self, info, id=None):
+        query = Contract.get_query(info)
+        if id:
+            query = query.filter(ContractModel.id == id)
+        return query.all()
+
 
 
 schema = graphene.Schema(query=Query)

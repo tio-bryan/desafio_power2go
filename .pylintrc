@@ -6,7 +6,7 @@ disable=
     missing-class-docstring,
     missing-function-docstring,
     too-few-public-methods,
-    invalid-name, # To bypass resolve functions on schema.py. As in the statement there are queries with camel case, I removed the mandatory snake case.
+    ; invalid-name, # To bypass resolve functions on schema.py. As in the statement there are queries with camel case, I removed the mandatory snake case.
     redefined-builtin # To bypass "id" parameters on schema.py. As in the statement there are queries with the "id" parameter, I removed this error of reserved variables names.
 
 # Analyse import fallback blocks. This can be used to support both Python 2 and

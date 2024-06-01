@@ -15,9 +15,7 @@ class Contract(Base):
     id = Column(Integer, primary_key=True)
     description = Column(String)
     user_id = Column(Integer, ForeignKey("user.id"))
-    user = relationship(
-        User, backref=backref("contracts", uselist=True, cascade="delete,all")
-    )
+    user = relationship(User, backref=backref("contracts", uselist=True, cascade="delete,all"))
     created_at = Column(DateTime, default=func.now())
     fidelity = Column(Integer)
     amount = Column(Float())

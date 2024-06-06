@@ -7,18 +7,18 @@ from database import db_session
 from schema import schema
 
 
-app = Flask(__name__)
-app.debug = True
+application = Flask(__name__)
+application.debug = True
 
-app.add_url_rule(
+application.add_url_rule(
     '/graphql', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True)
 )
 
 
-@app.teardown_appcontext
+@application.teardown_appcontext
 def shutdown_session(_exception=None):
     db_session.remove()
 
 
 if __name__ == '__main__':
-    app.run()
+    application.run()

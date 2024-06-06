@@ -25,7 +25,6 @@ def get_obj_vars(class_name, obj):
 class User(SQLAlchemyObjectType):
     class Meta:
         model = UserModel
-        interfaces = (relay.Node,)
 
 
 class Contract(SQLAlchemyObjectType):
@@ -34,6 +33,7 @@ class Contract(SQLAlchemyObjectType):
 
     class Meta:
         model = ContractModel
+        # Used relay to use pagination functions. Eg. Docs: https://graphql.org/learn/pagination/
         interfaces = (relay.Node,)
         exclude_fields = ('user_id', 'created_at') # Recreate fields to show in snake case
 
@@ -79,8 +79,8 @@ class UpdateUser(graphene.Mutation):
         id = graphene.ID()
         input = UpdateUserInput(required=True)
 
-    for k, v in vars(UpdateUserInput).items(): # Get UpdateUserInput variables
-        if k[0] != '_': # Remove private variables
+    for k, v in vars(UpdateUserInput).items():
+        if k[0] != '_':
             locals()[k] = v
 
     def mutate(self, _info, id, input):
@@ -98,6 +98,9 @@ class DeleteUser(graphene.Mutation):
     message = graphene.String()
 
     def mutate(self, _info, id):
+        # Check if has linked contracts.
+        # Maybe is there a more elegant way to implement this on DB side.
+        api_utils.get_contracts_by_user_id(ContractModel, id)
         deleted_obj = api_utils.delete(UserModel, id)
 
         return DeleteUser(**deleted_obj)
@@ -122,6 +125,10 @@ class CreateContract(graphene.Mutation):
             locals()[k] = v
 
     def mutate(self, _info, input=None):
+        # Check if user exists before create contract.
+        # I tried to do this from DB side, but I couldn't.
+        api_utils.get_by_id(UserModel, input.user_id)
+
         created_obj = api_utils.create(ContractModel(**input))
 
         return CreateContract(**get_obj_vars(CreateContractInput, created_obj))
@@ -151,7 +158,7 @@ class UpdateContract(graphene.Mutation):
         return UpdateContract(**get_obj_vars(UpdateContractInput, updated_obj))
 
 
-# Delete user
+# Delete contract
 class DeleteContract(graphene.Mutation):
     class Arguments:
         id = graphene.ID()
@@ -180,35 +187,25 @@ class Query(graphene.ObjectType):
     # Get user
     get_user = graphene.List(lambda: User, id=graphene.ID(required=True))
 
-    def resolve_get_user(self, info, id=None):
-        query = User.get_query(info)
-        if id:
-            query = query.filter(UserModel.id == id)
-        return query.all()
+    def resolve_get_user(self, _info, id=None):
+        return api_utils.get_by_id(UserModel, id)
 
 
     # Get contract
     get_contract = graphene.List(lambda: Contract, id=graphene.ID(required=True))
 
-    def resolve_get_contract(self, info, id=None):
-        query = Contract.get_query(info)
-        if id:
-            query = query.filter(ContractModel.id == id)
-        return query.all()
+    def resolve_get_contract(self, _info, id=None):
+        return api_utils.get_by_id(ContractModel, id)
 
 
     # Get contract by user
     get_contracts_by_user = graphene.List(
-        lambda: Contract,
+        lambda: User,
         user_id=graphene.ID(name='user_id', required=True)
     )
 
-    def resolve_get_contracts_by_user(self, info, user_id=None):
-        query = Contract.get_query(info)
-        if user_id:
-            query = query.filter(ContractModel.user_id == user_id)
-        return query.all()
-
+    def resolve_get_contracts_by_user(self, _info, user_id=None):
+        return api_utils.get_by_id(UserModel, user_id)
 
 
 schema = graphene.Schema(query=Query, mutation=Mutations)

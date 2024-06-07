@@ -57,3 +57,7 @@ The service is available through AWS Elastic Beanstalk at the http://desafio-pow
     ```sh
     deactivate
     ```
+
+## How to deploy on cloud service
+
+Just follow the steps in the official Elastic Beanstalk [tutorial](https://docs.aws.amazon.com/pt_br/elasticbeanstalk/latest/dg/create-deploy-python-flask.html)

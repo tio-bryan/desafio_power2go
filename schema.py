@@ -203,7 +203,9 @@ class Query(graphene.ObjectType):
         return api_utils.get_by_id(ContractModel, id)
 
 
-    # Get contract by user. Wrong implementation because it's the same of getUser but work with
+    # Get contract by user.
+
+    # Wrong implementation because it's the same of getUser but work with
     # default graphQL pagination on Contracts object: https://graphql.org/learn/pagination/
 
     # Works with following query format:

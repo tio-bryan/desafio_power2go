@@ -1,0 +1,1 @@
+Simple GraphQL API created with Flask, Graphene and SQLAlchemy

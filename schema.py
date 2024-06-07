@@ -1,7 +1,6 @@
 import graphene
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyObjectType
-# from graphql import GraphQLError
 
 from models import User as UserModel
 from models import Contract as ContractModel
@@ -30,12 +29,14 @@ class User(SQLAlchemyObjectType):
 class Contract(SQLAlchemyObjectType):
     user_id = graphene.Int(name='user_id')
     created_at = graphene.DateTime(name='created_at')
+    modified_at = graphene.DateTime(name='modified_at')
 
     class Meta:
         model = ContractModel
-        # Used relay to use pagination functions. Eg. Docs: https://graphql.org/learn/pagination/
+        # Used relay to use pagination functions
         interfaces = (relay.Node,)
-        exclude_fields = ('user_id', 'created_at') # Recreate fields to show in snake case
+        # Recreate fields to show in snake case
+        exclude_fields = ('user_id', 'created_at', 'modified_at')
 
     def resolve_user_id(self, _info):
         return self.user_id
@@ -51,7 +52,8 @@ class CreateUserInput(graphene.InputObjectType):
     id = graphene.ID()
     name = graphene.String()
     email = graphene.String()
-
+    created_at = graphene.DateTime(name='created_at')
+    modified_at = graphene.DateTime(name='modified_at')
 
 class CreateUser(graphene.Mutation):
     class Arguments:
@@ -72,6 +74,8 @@ class UpdateUserInput(graphene.InputObjectType):
     id = graphene.ID()
     name = graphene.String()
     email = graphene.String()
+    created_at = graphene.DateTime(name='created_at')
+    modified_at = graphene.DateTime(name='modified_at')
 
 
 class UpdateUser(graphene.Mutation):
@@ -125,10 +129,9 @@ class CreateContract(graphene.Mutation):
             locals()[k] = v
 
     def mutate(self, _info, input=None):
-        # Check if user exists before create contract.
+        # Check if user exists before creating contract.
         # I tried to do this from DB side, but I couldn't.
         api_utils.get_by_id(UserModel, input.user_id)
-
         created_obj = api_utils.create(ContractModel(**input))
 
         return CreateContract(**get_obj_vars(CreateContractInput, created_obj))
@@ -153,6 +156,8 @@ class UpdateContract(graphene.Mutation):
             locals()[k] = v
 
     def mutate(self, _info, id, input):
+        # Check if user exists before updating contract.
+        api_utils.get_by_id(UserModel, input.user_id)
         updated_obj = api_utils.update(ContractModel, id, input)
 
         return UpdateContract(**get_obj_vars(UpdateContractInput, updated_obj))
@@ -185,22 +190,38 @@ class Query(graphene.ObjectType):
     node = relay.Node.Field()
 
     # Get user
-    get_user = graphene.List(lambda: User, id=graphene.ID(required=True))
+    get_user = graphene.Field(User, id=graphene.ID(required=True))
 
     def resolve_get_user(self, _info, id=None):
         return api_utils.get_by_id(UserModel, id)
 
 
     # Get contract
-    get_contract = graphene.List(lambda: Contract, id=graphene.ID(required=True))
+    get_contract = graphene.Field(Contract, id=graphene.ID(required=True))
 
     def resolve_get_contract(self, _info, id=None):
         return api_utils.get_by_id(ContractModel, id)
 
 
-    # Get contract by user
-    get_contracts_by_user = graphene.List(
-        lambda: User,
+    # Get contract by user. Wrong implementation because it's the same of getUser but work with
+    # default graphQL pagination on Contracts object: https://graphql.org/learn/pagination/
+
+    # Works with following query format:
+    query = """
+    query getContractsByUser($user_id: ID!) {
+        getContractsByUser(user_id: $user_id) {
+            Contracts {
+                edges {
+                    node {
+                        id
+                    }
+                }
+            } 
+        }
+    }
+    """
+    get_contracts_by_user = graphene.Field(
+        User,
         user_id=graphene.ID(name='user_id', required=True)
     )
 

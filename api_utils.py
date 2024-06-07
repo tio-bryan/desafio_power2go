@@ -1,3 +1,4 @@
+import datetime
 from graphql import GraphQLError
 
 from database import db_session
@@ -31,6 +32,8 @@ def update(model, id, input):
 
     if query.count() == 0:
         raise GraphQLError(model.__name__ + ' not found')
+
+    input['modified_at'] = datetime.datetime.now(datetime.timezone.utc)
 
     query.update(input)
     db_session.commit()
